@@ -1,6 +1,6 @@
 # Etsy Research Tool - Project Context
 
-> 最后更新: 2026-05-15 | Phase 1-4 完成 | 当前: 开始 Phase 5
+> 最后更新: 2026-05-15 | Phase 1-5 全部完成
 
 ## 项目定位
 
@@ -59,7 +59,12 @@
 - 前端: SEO 列表页 (URL输入 + Audit按钮 + 轮询 + ScoreBadge/ScoreBar) + SEO 详情页 (总评分 + ScoreCircle + 改进建议卡片)
 - 修复: 搜索/审计按钮 Enter 键并发守卫 (keywords + seo 页面)
 
-### Phase 5 ⏳ — 仪表盘整合 + UI 打磨 (下一步)
+### Phase 5 ✅ — 仪表盘整合 + UI 打磨
+- Dashboard 首页: 3 个统计卡片 (Keywords/Shops/SEO) + 最近关键词 top 5 + 追踪店铺 top 5
+- 全局路由挂载: main.py 挂载所有 22 个 API 端点 + 健康检查
+- Alembic 初始迁移: 0001_initial.py 覆盖全部 5 个表
+- 类型提示修复: Optional[X] 替代 X | None (Python 3.9+ 兼容)
+- README.md: 快速开始、架构概览、开发命令、模块说明
 
 ## 关键架构决策
 
@@ -116,7 +121,7 @@ backend/app/
 frontend/src/
 ├── app/
 │   ├── layout.tsx        # 导航栏 (/, /keywords, /shops, /seo)
-│   ├── page.tsx          # 首页 (Next.js boilerplate, 等待 Phase 5 替换)
+│   ├── page.tsx          # Dashboard 首页 (统计卡片, 最近关键词, 追踪店铺)
 │   ├── keywords/
 │   │   ├── page.tsx      # 关键词列表 (搜索框, 轮询 task 状态, 卡片 grid)
 │   │   └── [id]/page.tsx # 关键词详情 (指标卡片, 关联标签, 趋势历史)
