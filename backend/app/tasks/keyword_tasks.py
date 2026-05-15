@@ -1,11 +1,20 @@
 import asyncio
+from decimal import Decimal
 from app.tasks.celery_app import celery_app
 from app.etsy.client import EtsyClient
+from app.etsy.exceptions import (
+    EtsyRateLimitError,
+    EtsyServerError,
+    EtsyAuthError,
+    EtsyNotFoundError,
+)
 from app.services.keyword_service import KeywordService
 from app.db.session import async_session
 
+RETRYABLE_EXCEPTIONS = (EtsyRateLimitError, EtsyServerError, OSError)
 
-@celery_app.task(bind=True, max_retries=3)
+
+@celery_app.task(bind=True, max_retries=3, default_retry_delay=60)
 def search_and_analyze_keyword(self, keyword: str):
     """Search keyword on Etsy, analyze results, and store in DB."""
 
@@ -29,8 +38,10 @@ def search_and_analyze_keyword(self, keyword: str):
                         amount = float(price_data.get("amount", 0)) / max(
                             float(price_data.get("divisor", 1)), 1
                         )
+                    elif isinstance(price_data, (int, float)):
+                        amount = float(price_data)
                     else:
-                        amount = float(price_data) if price_data else 0
+                        amount = 0.0
                     prices.append(amount)
                     all_tags.append(item.get("tags", []))
 
@@ -46,7 +57,10 @@ def search_and_analyze_keyword(self, keyword: str):
                     ) / max(len(listings_data), 1),
                     prices=prices,
                 )
-                record.avg_price = sum(prices) / len(prices) if prices else 0
+                if prices:
+                    record.avg_price = Decimal(str(round(sum(prices) / len(prices), 2)))
+                else:
+                    record.avg_price = Decimal("0")
                 record.listing_count = total_count
                 record.related_tags = service.extract_related_tags(all_tags, keyword)
                 record.etsy_raw = {"count": total_count, "sample": listings_data[:5]}
@@ -60,4 +74,9 @@ def search_and_analyze_keyword(self, keyword: str):
         finally:
             await client.close()
 
-    return asyncio.run(_run())
+    try:
+        return asyncio.run(_run())
+    except RETRYABLE_EXCEPTIONS as exc:
+        raise self.retry(exc=exc)
+    except (EtsyAuthError, EtsyNotFoundError) as exc:
+        return {"error": str(exc), "keyword": keyword}
