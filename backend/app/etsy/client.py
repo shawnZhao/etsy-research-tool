@@ -49,7 +49,12 @@ class EtsyClient:
             raise EtsyServerError("Server error", response.status_code)
         if response.status_code >= 400:
             raise EtsyAPIError(f"API error: {response.text}", response.status_code)
-        return response.json()
+        try:
+            return response.json()
+        except ValueError:
+            raise EtsyAPIError(
+                f"Invalid JSON response: {response.text[:200]}", response.status_code
+            )
 
     async def search_listings(
         self, keyword: str, limit: int = 50, offset: int = 0, sort: str = "score"
