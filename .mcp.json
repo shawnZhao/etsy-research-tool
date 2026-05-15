@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "etsy": {
+      "type": "url",
+      "url": "https://mcp.api.etsycloud.com/mcp"
+    }
+  }
+}
