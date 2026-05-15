@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.db.session import engine
 from app.api.keywords import router as keywords_router
 from app.api.shops import router as shops_router
+from app.api.seo import router as seo_router
 from app.api.tasks import router as tasks_router
 
 
@@ -28,6 +29,7 @@ app.add_middleware(
 
 app.include_router(keywords_router, prefix="/api")
 app.include_router(shops_router, prefix="/api")
+app.include_router(seo_router, prefix="/api")
 app.include_router(tasks_router, prefix="/api")
 
 
