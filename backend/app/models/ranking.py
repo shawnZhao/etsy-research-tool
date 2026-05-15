@@ -11,6 +11,6 @@ class RankingSnapshot(Base, UUIDMixin):
 
     listing_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("listings.id"), nullable=False, index=True)
     keyword_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("keywords.id"), nullable=False, index=True)
-    position: Mapped[int] = mapped_column(Integer, nullable=False)
-    total_results: Mapped[int] = mapped_column(Integer, default=0)
+    position: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    total_results: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     captured_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)

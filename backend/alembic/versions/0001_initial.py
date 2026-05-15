@@ -82,6 +82,7 @@ def upgrade() -> None:
         sa.Column("id", sa.UUID(), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=True),
         sa.Column("last_updated", sa.DateTime(timezone=True), nullable=True),
+        sa.ForeignKeyConstraint(["shop_id"], ["shops.shop_id"],),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("listing_id"),
     )
@@ -92,7 +93,7 @@ def upgrade() -> None:
         "ranking_snapshots",
         sa.Column("listing_id", sa.UUID(), nullable=False),
         sa.Column("keyword_id", sa.UUID(), nullable=False),
-        sa.Column("position", sa.Integer(), nullable=False),
+        sa.Column("position", sa.Integer(), nullable=False, server_default="0"),
         sa.Column("total_results", sa.Integer(), nullable=False, server_default="0"),
         sa.Column("captured_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.Column("id", sa.UUID(), nullable=False),

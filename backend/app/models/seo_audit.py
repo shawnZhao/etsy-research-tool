@@ -10,10 +10,10 @@ class SEOAudit(Base, UUIDMixin):
     __tablename__ = "seo_audits"
 
     listing_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("listings.id"), nullable=False, index=True)
-    title_score: Mapped[float] = mapped_column(Float, default=0.0)
-    tag_score: Mapped[float] = mapped_column(Float, default=0.0)
-    description_score: Mapped[float] = mapped_column(Float, default=0.0)
-    overall_score: Mapped[float] = mapped_column(Float, default=0.0)
-    suggestions: Mapped[dict] = mapped_column(JSONB, default=list)
-    benchmarks: Mapped[dict] = mapped_column(JSONB, default=dict)
+    title_score: Mapped[float] = mapped_column(Float, default=0.0, server_default="0.0")
+    tag_score: Mapped[float] = mapped_column(Float, default=0.0, server_default="0.0")
+    description_score: Mapped[float] = mapped_column(Float, default=0.0, server_default="0.0")
+    overall_score: Mapped[float] = mapped_column(Float, default=0.0, server_default="0.0")
+    suggestions: Mapped[list] = mapped_column(JSONB, default=list, server_default="[]")
+    benchmarks: Mapped[dict] = mapped_column(JSONB, default=dict, server_default="{}")
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
