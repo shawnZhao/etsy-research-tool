@@ -13,4 +13,4 @@ class UUIDMixin:
 
 class TimestampMixin:
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    last_updated = Column(DateTime(timezone=True), onupdate=func.now())
+    last_updated = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

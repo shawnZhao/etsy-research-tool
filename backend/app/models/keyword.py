@@ -1,4 +1,4 @@
-from sqlalchemy import String, Integer, Float, Numeric, Text
+from sqlalchemy import String, Integer, Float, Numeric
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base, UUIDMixin, TimestampMixin
