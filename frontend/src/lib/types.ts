@@ -109,7 +109,7 @@ export interface SEOSuggestion {
 
 export interface TaskStatus {
   task_id: string;
-  status: "pending" | "processing" | "completed" | "failed";
+  status: "PENDING" | "STARTED" | "SUCCESS" | "FAILURE";
   result?: unknown;
   error?: string;
 }
