@@ -1,30 +1,33 @@
 import math
 from collections import Counter
 from datetime import datetime, timezone
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.models.keyword import Keyword
 
 
 class KeywordService:
+    CATEGORY_WEIGHTS: dict[str, float] = {
+        "jewelry": 1.2,
+        "home_and_living": 0.9,
+        "clothing": 1.1,
+        "craft_supplies": 0.8,
+        "art_and_collectibles": 0.7,
+        "accessories": 1.0,
+        "paper_and_party_supplies": 0.6,
+        "weddings": 1.3,
+        "toys_and_games": 0.8,
+        "vintage": 0.9,
+    }
+
     def __init__(self, db: AsyncSession):
         self.db = db
 
     def estimate_search_volume(self, listing_count: int, category: str) -> int:
         """Estimate search volume from listing count and category weight."""
-        category_weights = {
-            "jewelry": 1.2,
-            "home_and_living": 0.9,
-            "clothing": 1.1,
-            "craft_supplies": 0.8,
-            "art_and_collectibles": 0.7,
-            "accessories": 1.0,
-            "paper_and_party_supplies": 0.6,
-            "weddings": 1.3,
-            "toys_and_games": 0.8,
-            "vintage": 0.9,
-        }
-        weight = category_weights.get(category, 0.85)
+        normalized = category.lower().strip().replace(" & ", "_and_").replace(" ", "_")
+        weight = self.CATEGORY_WEIGHTS.get(normalized, 0.85)
         return int(listing_count * weight / 100)
 
     def calculate_competition(
@@ -34,9 +37,7 @@ class KeywordService:
         if not prices or total_listings == 0:
             return 0.0
 
-        high_sales_ratio = min(avg_review_count / 500, 1.0)
-        max_possible_reviews = 2000
-        review_factor = min(avg_review_count / max_possible_reviews, 1.0)
+        review_factor = min(avg_review_count / 1000, 1.0)
 
         if len(prices) > 1:
             mean_price = sum(prices) / len(prices)
@@ -51,9 +52,8 @@ class KeywordService:
             price_dispersion = 0
 
         score = (
-            0.4 * high_sales_ratio
-            + 0.3 * review_factor
-            + 0.3 * (1 - price_dispersion)
+            0.5 * review_factor
+            + 0.5 * (1 - price_dispersion)
         ) * 100
         return round(score, 1)
 
@@ -61,11 +61,16 @@ class KeywordService:
         self, tags_list: list[list[str]], seed_keyword: str
     ) -> list[dict]:
         """Extract related tags from search results, excluding the seed keyword."""
-        counter = Counter()
+        seed_lower = seed_keyword.lower()
+        seed_tokens = set(seed_lower.split())
+        counter: Counter[str] = Counter()
         for tags in tags_list:
             for tag in tags:
-                if seed_keyword.lower() not in tag.lower():
-                    counter[tag] += 1
+                tag_lower = tag.lower()
+                tag_tokens = set(tag_lower.split())
+                if tag_lower == seed_lower or seed_tokens == tag_tokens:
+                    continue
+                counter[tag_lower] += 1
         top = counter.most_common(20)
         return [{"tag": tag, "count": count} for tag, count in top]
 
@@ -89,11 +94,18 @@ class KeywordService:
 
     async def get_or_create_keyword(self, keyword: str) -> Keyword:
         """Get existing keyword record or create a new one."""
-        stmt = select(Keyword).where(Keyword.keyword == keyword.lower().strip())
+        normalized = keyword.lower().strip()
+        stmt = select(Keyword).where(Keyword.keyword == normalized)
         result = await self.db.execute(stmt)
         record = result.scalar_one_or_none()
-        if record is None:
-            record = Keyword(keyword=keyword.lower().strip())
-            self.db.add(record)
+        if record is not None:
+            return record
+        record = Keyword(keyword=normalized)
+        self.db.add(record)
+        try:
             await self.db.flush()
+        except IntegrityError:
+            await self.db.rollback()
+            result = await self.db.execute(stmt)
+            record = result.scalar_one()
         return record
