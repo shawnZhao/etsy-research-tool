@@ -4,6 +4,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.db.session import engine
+from app.api.keywords import router as keywords_router
+from app.api.tasks import router as tasks_router
 
 
 @asynccontextmanager
@@ -21,6 +23,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+app.include_router(keywords_router, prefix="/api")
+app.include_router(tasks_router, prefix="/api")
 
 
 @app.get("/api/health")
