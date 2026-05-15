@@ -25,7 +25,7 @@ export interface Shop {
   category_distribution: CategoryDist[];
   price_range: PriceRange;
   listing_frequency: FrequencyData;
-  last_synced: string;
+  last_updated: string;
   created_at: string;
 }
 
