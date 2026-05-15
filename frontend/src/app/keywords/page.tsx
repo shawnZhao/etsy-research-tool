@@ -8,24 +8,31 @@ import Link from "next/link";
 export default function KeywordsPage() {
   const [keywords, setKeywords] = useState<Keyword[]>([]);
   const [searchInput, setSearchInput] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [taskId, setTaskId] = useState<string | null>(null);
 
   useEffect(() => {
-    listKeywords().then(setKeywords).catch(console.error);
+    listKeywords()
+      .then(setKeywords)
+      .catch((e) => setError("Failed to load keywords: " + e.message));
   }, []);
 
   useEffect(() => {
     if (!taskId) return;
     const interval = setInterval(async () => {
-      const status = await getTaskStatus(taskId);
-      if (status.status === "SUCCESS") {
+      try {
+        const status = await getTaskStatus(taskId);
+        if (status.status === "SUCCESS") {
+          setTaskId(null);
+          const updated = await listKeywords();
+          setKeywords(updated);
+        } else if (status.status === "FAILURE") {
+          setTaskId(null);
+          setError("Search failed: " + status.error);
+        }
+      } catch (e) {
         setTaskId(null);
-        const updated = await listKeywords();
-        setKeywords(updated);
-      } else if (status.status === "FAILURE") {
-        setTaskId(null);
-        alert("Search failed: " + status.error);
+        setError("Failed to check task status: " + (e as Error).message);
       }
     }, 2000);
     return () => clearInterval(interval);
@@ -33,15 +40,14 @@ export default function KeywordsPage() {
 
   const handleSearch = async () => {
     if (!searchInput.trim()) return;
-    setLoading(true);
+    setError(null);
     try {
       const { task_id } = await searchKeyword(searchInput.trim());
       setTaskId(task_id);
     } catch (e) {
-      alert("Search failed: " + (e as Error).message);
+      setError("Search failed: " + (e as Error).message);
     }
     setSearchInput("");
-    setLoading(false);
   };
 
   return (
@@ -58,14 +64,21 @@ export default function KeywordsPage() {
         />
         <button
           onClick={handleSearch}
-          disabled={loading || !!taskId}
+          disabled={!!taskId}
           className="bg-orange-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-orange-700 disabled:opacity-50"
         >
           {taskId ? "Analyzing..." : "Search"}
         </button>
       </div>
 
-      {keywords.length === 0 && !taskId && (
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 mb-6">
+          {error}
+          <button onClick={() => setError(null)} className="ml-3 underline">Dismiss</button>
+        </div>
+      )}
+
+      {keywords.length === 0 && !taskId && !error && (
         <p className="text-gray-500 text-center py-12">
           No keywords analyzed yet. Search a keyword to get started.
         </p>

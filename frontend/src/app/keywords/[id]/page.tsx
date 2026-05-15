@@ -10,15 +10,35 @@ export default function KeywordDetailPage() {
   const [keyword, setKeyword] = useState<Keyword | null>(null);
   const [related, setRelated] = useState<TagCount[]>([]);
   const [trend, setTrend] = useState<TrendPoint[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!id) return;
-    getKeyword(id).then(setKeyword).catch(console.error);
-    getKeywordRelated(id).then(setRelated).catch(console.error);
-    getKeywordTrend(id).then(setTrend).catch(console.error);
+    setLoading(true);
+    setError(null);
+    Promise.all([
+      getKeyword(id).then(setKeyword),
+      getKeywordRelated(id).then(setRelated),
+      getKeywordTrend(id).then(setTrend),
+    ])
+      .catch((e) => setError("Failed to load keyword data: " + e.message))
+      .finally(() => setLoading(false));
   }, [id]);
 
-  if (!keyword) return <div className="text-center py-12 text-gray-500">Loading...</div>;
+  if (loading) return <div className="text-center py-12 text-gray-500">Loading...</div>;
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 inline-block">
+          {error}
+        </div>
+      </div>
+    );
+  }
+
+  if (!keyword) return <div className="text-center py-12 text-gray-500">Keyword not found.</div>;
 
   return (
     <div>
