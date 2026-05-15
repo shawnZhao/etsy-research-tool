@@ -1,6 +1,6 @@
 # Etsy Research Tool - Project Context
 
-> 最后更新: 2026-05-15 | Phase 1-3 完成 | 当前: 开始 Phase 4
+> 最后更新: 2026-05-15 | Phase 1-4 完成 | 当前: 开始 Phase 5
 
 ## 项目定位
 
@@ -49,8 +49,17 @@
 - 前端: 竞品列表页 (URL 输入 + Track Shop + 轮询状态) + 店铺详情页 (指标卡片 + 标签云 + 品类分布 + 最近 listing)
 - types.ts: Shop.last_synced → last_updated 修复
 
-### Phase 4 ⏳ — 商品 SEO 模块 (下一步)
-### Phase 5 ⏳ — 仪表盘整合 + UI 打磨
+### Phase 4 ✅ — 商品 SEO 模块
+- SEOService: 纯函数评分算法 — score_title (长度/关键字位置/大小写/修饰词), score_tags (槽位/长尾词/标题对齐/热词), score_description (长度/关键词密度/结构/长尾短语)
+- 辅助: extract_core_keywords (前5标题词+前3标签, 去重max5), compute_overall_score (35/40/25权重)
+- 修复: 词边界匹配 (\b) 避免子串误判 (gold≠golden), 标题词标点清理
+- Celery 任务: run_seo_audit (fetch listing → upsert → score → save SEOAudit)
+- API 端点: POST /seo/audit, GET /seo/audits/{id}, GET /seo/audits, GET /seo/benchmarks
+- EtsyClient: get_listing 返回单个 listing dict (非包裹在 results 中)
+- 前端: SEO 列表页 (URL输入 + Audit按钮 + 轮询 + ScoreBadge/ScoreBar) + SEO 详情页 (总评分 + ScoreCircle + 改进建议卡片)
+- 修复: 搜索/审计按钮 Enter 键并发守卫 (keywords + seo 页面)
+
+### Phase 5 ⏳ — 仪表盘整合 + UI 打磨 (下一步)
 
 ## 关键架构决策
 
@@ -79,6 +88,7 @@ backend/app/
 ├── api/
 │   ├── keywords.py       # /api/keywords/* (6 endpoints)
 │   ├── shops.py          # /api/shops/* (7 endpoints)
+│   ├── seo.py            # /api/seo/* (4 endpoints)
 │   └── tasks.py          # /api/tasks/{task_id}
 ├── models/
 │   ├── keyword.py        # Keyword (keyword, volume, competition, tags, trend)
@@ -88,7 +98,8 @@ backend/app/
 │   └── seo_audit.py      # SEOAudit (FK→listings, title/tag/desc scores, suggestions)
 ├── services/
 │   ├── keyword_service.py # KeywordService (5 methods)
-│   └── shop_service.py    # ShopService (4 methods)
+│   ├── shop_service.py    # ShopService (4 methods)
+│   └── seo_service.py     # SEOService (5 pure methods, 词边界匹配)
 ├── etsy/
 │   ├── client.py         # EtsyClient (httpx, retry 3x, _handle_response, 6 endpoints incl. find_shop)
 │   ├── auth.py           # EtsyAuth (x-api-key + Bearer token)
@@ -96,7 +107,8 @@ backend/app/
 ├── tasks/
 │   ├── celery_app.py     # Celery 配置 (acks_late, retry_on_startup, result_expires)
 │   ├── keyword_tasks.py  # search_and_analyze_keyword
-│   └── sync_tasks.py     # sync_shop + _upsert_listing
+│   ├── sync_tasks.py     # sync_shop + _upsert_listing
+│   └── seo_tasks.py      # run_seo_audit + _get_or_create_listing
 └── db/
     ├── base.py           # Base, UUIDMixin, TimestampMixin
     └── session.py        # async_session, get_db()
@@ -108,9 +120,12 @@ frontend/src/
 │   ├── keywords/
 │   │   ├── page.tsx      # 关键词列表 (搜索框, 轮询 task 状态, 卡片 grid)
 │   │   └── [id]/page.tsx # 关键词详情 (指标卡片, 关联标签, 趋势历史)
-│   └── shops/
-│       ├── page.tsx      # 竞品列表 (URL输入, Track Shop, 轮询状态)
-│       └── [id]/page.tsx # 店铺详情 (指标, 标签云, 品类分布, listing)
+│   ├── shops/
+│   │   ├── page.tsx      # 竞品列表 (URL输入, Track Shop, 轮询状态)
+│   │   └── [id]/page.tsx # 店铺详情 (指标, 标签云, 品类分布, listing)
+│   └── seo/
+│       ├── page.tsx      # SEO 列表 (URL输入, Audit按钮, 轮询, ScoreBadge/Bar)
+│       └── [id]/page.tsx # SEO 详情 (总评分, ScoreCircle, 改进建议卡片)
 └── lib/
     ├── types.ts          # 12 个接口 (Shop.last_updated 已修正)
     └── api.ts            # request<T> 泛型封装, 18 个 API 函数
