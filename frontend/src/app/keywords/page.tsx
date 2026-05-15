@@ -39,7 +39,7 @@ export default function KeywordsPage() {
   }, [taskId]);
 
   const handleSearch = async () => {
-    if (!searchInput.trim()) return;
+    if (!searchInput.trim() || taskId) return;
     setError(null);
     try {
       const { task_id } = await searchKeyword(searchInput.trim());
