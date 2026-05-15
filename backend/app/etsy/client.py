@@ -1,4 +1,4 @@
-import time
+import asyncio
 import httpx
 from app.config import settings
 from app.etsy.auth import etsy_auth
@@ -24,20 +24,18 @@ class EtsyClient:
         await self.client.aclose()
 
     async def _request(self, method: str, path: str, **kwargs) -> dict:
-        url = f"{self.base_url}{path}"
         for attempt in range(3):
             try:
-                response = await self.client.request(method, url, **kwargs)
+                response = await self.client.request(method, path, **kwargs)
                 return self._handle_response(response)
             except (EtsyRateLimitError, EtsyServerError) as e:
                 if attempt == 2:
                     raise
-                wait = 2 ** attempt
-                time.sleep(wait)
+                await asyncio.sleep(2 ** attempt)
             except httpx.RequestError as e:
                 if attempt == 2:
                     raise EtsyAPIError(f"Request failed: {e}")
-                time.sleep(2 ** attempt)
+                await asyncio.sleep(2 ** attempt)
 
     def _handle_response(self, response: httpx.Response) -> dict:
         if response.status_code == 429:
