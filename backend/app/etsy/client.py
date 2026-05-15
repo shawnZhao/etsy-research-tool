@@ -72,6 +72,13 @@ class EtsyClient:
         params = {"limit": limit, "offset": offset}
         return await self._request("GET", f"/application/shops/{shop_id}/listings/active", params=params)
 
+    async def find_shop(self, shop_name: str) -> dict | None:
+        """Find a shop by name. Returns the first matching shop dict or None."""
+        params = {"shop_name": shop_name, "limit": 1}
+        data = await self._request("GET", "/application/shops", params=params)
+        results = data.get("results", [])
+        return results[0] if results else None
+
     async def get_listing_reviews(self, listing_id: int, limit: int = 25, offset: int = 0) -> dict:
         params = {"limit": limit, "offset": offset}
         return await self._request("GET", f"/application/listings/{listing_id}/reviews", params=params)
