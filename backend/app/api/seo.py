@@ -1,5 +1,6 @@
 import asyncio
 import re
+from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -77,7 +78,7 @@ async def get_audit(audit_id: str, db: AsyncSession = Depends(get_db)):
 # ---------------------------------------------------------------------------
 @router.get("/audits")
 async def list_audits(
-    listing_id: str | None = Query(None),
+    listing_id: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
 ):
     """List SEO audits, optionally filtered by listing UUID."""

@@ -1,4 +1,5 @@
 import asyncio
+from typing import Optional
 import httpx
 from app.config import settings
 from app.etsy.auth import etsy_auth
@@ -72,7 +73,7 @@ class EtsyClient:
         params = {"limit": limit, "offset": offset}
         return await self._request("GET", f"/application/shops/{shop_id}/listings/active", params=params)
 
-    async def find_shop(self, shop_name: str) -> dict | None:
+    async def find_shop(self, shop_name: str) -> Optional[dict]:
         """Find a shop by name. Returns the first matching shop dict or None."""
         params = {"shop_name": shop_name, "limit": 1}
         data = await self._request("GET", "/application/shops", params=params)
