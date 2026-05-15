@@ -12,9 +12,13 @@ import type {
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const { headers: customHeaders, ...restOptions } = options || {};
   const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { "Content-Type": "application/json" },
-    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...customHeaders,
+    },
+    ...restOptions,
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: res.statusText }));
