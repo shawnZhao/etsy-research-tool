@@ -24,6 +24,7 @@ class EtsyClient:
         await self.client.aclose()
 
     async def _request(self, method: str, path: str, **kwargs) -> dict:
+        path = path.lstrip("/")
         for attempt in range(3):
             try:
                 response = await self.client.request(method, path, **kwargs)
@@ -63,7 +64,7 @@ class EtsyClient:
         return await self._request("GET", f"/application/shops/{shop_id}")
 
     async def get_shop_listings(self, shop_id: int, limit: int = 100, offset: int = 0) -> dict:
-        params = {"shop_id": shop_id, "limit": limit, "offset": offset}
+        params = {"limit": limit, "offset": offset}
         return await self._request("GET", f"/application/shops/{shop_id}/listings/active", params=params)
 
     async def get_listing_reviews(self, listing_id: int, limit: int = 25, offset: int = 0) -> dict:
