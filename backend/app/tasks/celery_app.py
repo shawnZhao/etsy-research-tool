@@ -5,6 +5,11 @@ celery_app = Celery(
     "etsy_research",
     broker=settings.redis_url,
     backend=settings.redis_url,
+    include=[
+        "app.tasks.keyword_tasks",
+        "app.tasks.sync_tasks",
+        "app.tasks.seo_tasks",
+    ],
 )
 
 celery_app.conf.update(

@@ -17,7 +17,6 @@ class EtsyClient:
         self.base_url = settings.etsy_api_base_url
         self.client = httpx.AsyncClient(
             base_url=self.base_url,
-            headers=etsy_auth.get_headers(),
             timeout=30.0,
         )
 
@@ -26,9 +25,12 @@ class EtsyClient:
 
     async def _request(self, method: str, path: str, **kwargs) -> dict:
         path = path.lstrip("/")
+        headers = await etsy_auth.get_headers()
         for attempt in range(3):
             try:
-                response = await self.client.request(method, path, **kwargs)
+                response = await self.client.request(
+                    method, path, headers=headers, **kwargs
+                )
                 return self._handle_response(response)
             except (EtsyRateLimitError, EtsyServerError) as e:
                 if attempt == 2:
