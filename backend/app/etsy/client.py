@@ -15,8 +15,10 @@ from app.etsy.exceptions import (
 class EtsyClient:
     def __init__(self):
         self.base_url = settings.etsy_api_base_url
+        proxy = settings.etsy_proxy_url or None
         self.client = httpx.AsyncClient(
             base_url=self.base_url,
+            proxy=proxy,
             timeout=30.0,
         )
 

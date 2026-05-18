@@ -114,12 +114,13 @@ class TokenManager:
 class EtsyAuth:
     def __init__(self):
         self.api_key = settings.etsy_api_key
+        self.api_secret = settings.etsy_api_secret
         self._token_manager = TokenManager()
 
     async def get_headers(self) -> dict:
         access_token = await self._token_manager.get_access_token()
         return {
-            "x-api-key": self.api_key,
+            "x-api-key": f"{self.api_key}:{self.api_secret}",
             "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json",
         }

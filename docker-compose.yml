@@ -39,8 +39,10 @@ services:
       DATABASE_URL_SYNC: postgresql://etsy:etsy_dev@postgres:5432/etsy_research
       REDIS_URL: redis://redis:6379/0
       ETSY_API_KEY: ${ETSY_API_KEY}
+      ETSY_API_SECRET: ${ETSY_API_SECRET}
       ETSY_ACCESS_TOKEN: ${ETSY_ACCESS_TOKEN}
       ETSY_REFRESH_TOKEN: ${ETSY_REFRESH_TOKEN}
+      ETSY_PROXY_URL: ${ETSY_PROXY_URL:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -57,8 +59,10 @@ services:
       DATABASE_URL_SYNC: postgresql://etsy:etsy_dev@postgres:5432/etsy_research
       REDIS_URL: redis://redis:6379/0
       ETSY_API_KEY: ${ETSY_API_KEY}
+      ETSY_API_SECRET: ${ETSY_API_SECRET}
       ETSY_ACCESS_TOKEN: ${ETSY_ACCESS_TOKEN}
       ETSY_REFRESH_TOKEN: ${ETSY_REFRESH_TOKEN}
+      ETSY_PROXY_URL: ${ETSY_PROXY_URL:-}
     depends_on:
       postgres:
         condition: service_healthy

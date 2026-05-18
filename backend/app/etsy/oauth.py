@@ -68,6 +68,11 @@ def build_authorization_url(
     return f"{ETSY_AUTH_URL}?{urlencode(params)}"
 
 
+def _get_proxy() -> str | None:
+    from app.config import settings
+    return settings.etsy_proxy_url or None
+
+
 async def exchange_code_for_token(
     client_id: str,
     redirect_uri: str,
@@ -82,7 +87,7 @@ async def exchange_code_for_token(
         "code": code,
         "code_verifier": code_verifier,
     }
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(proxy=_get_proxy()) as client:
         resp = await client.post(ETSY_TOKEN_URL, data=data)
         if resp.status_code != 200:
             raise RuntimeError(
@@ -101,7 +106,7 @@ async def refresh_access_token(
         "client_id": client_id,
         "refresh_token": refresh_token,
     }
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(proxy=_get_proxy()) as client:
         resp = await client.post(ETSY_TOKEN_URL, data=data)
         if resp.status_code != 200:
             raise RuntimeError(
