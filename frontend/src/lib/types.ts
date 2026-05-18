@@ -53,6 +53,7 @@ export interface Listing {
 export interface SEOAudit {
   id: string;
   listing_id: string;
+  listing?: { title: string; url: string };
   title_score: number;
   tag_score: number;
   description_score: number;

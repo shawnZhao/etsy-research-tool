@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.db.session import engine
+from app.db.session import get_engine
 from app.api.auth import router as auth_router
 from app.api.keywords import router as keywords_router
 from app.api.shops import router as shops_router
@@ -14,7 +14,9 @@ from app.api.tasks import router as tasks_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     yield
-    await engine.dispose()
+    engine = get_engine()
+    if engine:
+        await engine.dispose()
 
 
 app = FastAPI(title="Etsy Research Tool", version="0.1.0", lifespan=lifespan)

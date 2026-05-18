@@ -9,11 +9,13 @@ from app.etsy.exceptions import (
     EtsyNotFoundError,
 )
 from app.services.shop_service import ShopService
-from app.db.session import async_session
+from app.db.session import _get_async_session
 from app.models.listing import Listing
 from sqlalchemy import select
 
 RETRYABLE_EXCEPTIONS = (EtsyRateLimitError, EtsyServerError, OSError)
+
+MAX_LISTINGS_PER_SYNC = 500  # 足够做分析，避免翻页耗时过长
 
 
 @celery_app.task(bind=True, max_retries=3, default_retry_delay=60)
@@ -23,7 +25,7 @@ def sync_shop(self, shop_id: int):
     async def _run():
         client = EtsyClient()
         try:
-            async with async_session() as db:
+            async with _get_async_session()() as db:
                 service = ShopService(db)
 
                 # 1. Fetch shop from Etsy API
@@ -41,16 +43,18 @@ def sync_shop(self, shop_id: int):
                 shop.avg_rating = Decimal(str(round(review_avg, 2)))
                 shop.etsy_raw = shop_data
 
-                # 3. Fetch all listings with pagination
+                # 3. Fetch listings with pagination (capped for performance)
                 offset = 0
                 limit = 100
-                while True:
+                fetched = 0
+                while fetched < MAX_LISTINGS_PER_SYNC:
                     page = await client.get_shop_listings(
                         shop_id, limit=limit, offset=offset
                     )
                     items = page.get("results", [])
                     for item in items:
                         await _upsert_listing(db, shop.shop_id, item)
+                    fetched += len(items)
                     offset += len(items)
                     if len(items) < limit:
                         break
@@ -101,7 +105,7 @@ async def _upsert_listing(db, shop_id: int, item: dict):
     price = Decimal(str(round(price_value, 2)))
 
     # Parse category from taxonomy_path (use last element)
-    taxonomy_path = item.get("taxonomy_path", [])
+    taxonomy_path = item.get("taxonomy_path") or []
     category = taxonomy_path[-1] if taxonomy_path else None
 
     # Parse currency — prefer top-level currency_code, fall back to price dict
@@ -112,7 +116,7 @@ async def _upsert_listing(db, shop_id: int, item: dict):
         currency = "USD"
 
     # Parse images — extract full-size URLs
-    images_data = item.get("images", [])
+    images_data = item.get("images") or []
     images = []
     for img in images_data:
         img_url = img.get("url_fullxfull") or img.get("url_570xN") or ""
@@ -123,7 +127,7 @@ async def _upsert_listing(db, shop_id: int, item: dict):
     fields = {
         "title": item.get("title", ""),
         "description": item.get("description", ""),
-        "tags": item.get("tags", []),
+        "tags": item.get("tags") or [],
         "price": price,
         "currency": currency,
         "category": category,

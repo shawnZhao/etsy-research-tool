@@ -9,7 +9,7 @@ from app.etsy.exceptions import (
     EtsyNotFoundError,
 )
 from app.services.seo_service import SEOService
-from app.db.session import async_session
+from app.db.session import _get_async_session
 from app.models.listing import Listing
 from app.models.seo_audit import SEOAudit
 from sqlalchemy import select
@@ -94,7 +94,7 @@ async def _get_or_create_listing(db, item: dict):
     price = Decimal(str(round(price_value, 2)))
 
     # Parse category from taxonomy_path (use last element)
-    taxonomy_path = item.get("taxonomy_path", [])
+    taxonomy_path = item.get("taxonomy_path") or []
     category = taxonomy_path[-1] if taxonomy_path else None
 
     # Parse currency — prefer top-level currency_code, fall back to price dict
@@ -105,7 +105,7 @@ async def _get_or_create_listing(db, item: dict):
         currency = "USD"
 
     # Parse images — extract full-size URLs
-    images_data = item.get("images", [])
+    images_data = item.get("images") or []
     images = []
     for img in images_data:
         img_url = img.get("url_fullxfull") or img.get("url_570xN") or ""
@@ -118,7 +118,7 @@ async def _get_or_create_listing(db, item: dict):
     fields = {
         "title": item.get("title", ""),
         "description": item.get("description", ""),
-        "tags": item.get("tags", []),
+        "tags": item.get("tags") or [],
         "price": price,
         "currency": currency,
         "category": category,
@@ -156,7 +156,7 @@ def run_seo_audit(self, listing_id: int):
     async def _run():
         client = EtsyClient()
         try:
-            async with async_session() as db:
+            async with _get_async_session()() as db:
                 service = SEOService()
 
                 # 1. Fetch listing from Etsy API

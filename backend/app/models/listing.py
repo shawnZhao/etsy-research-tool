@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from sqlalchemy import String, Integer, Float, Numeric, Text, ForeignKey
+from sqlalchemy import String, Integer, BigInteger, Float, Numeric, Text, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base, UUIDMixin, TimestampMixin
@@ -9,8 +9,8 @@ from app.db.base import Base, UUIDMixin, TimestampMixin
 class Listing(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "listings"
 
-    listing_id: Mapped[int] = mapped_column(Integer, unique=True, index=True, nullable=False)
-    shop_id: Mapped[int] = mapped_column(Integer, ForeignKey("shops.shop_id"), nullable=False, index=True)
+    listing_id: Mapped[int] = mapped_column(BigInteger, unique=True, index=True, nullable=False)
+    shop_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("shops.shop_id"), nullable=False, index=True)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=True)
     tags: Mapped[list] = mapped_column(JSONB, default=list, server_default="[]")

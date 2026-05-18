@@ -39,12 +39,25 @@ class TokenManager:
         self._local_lock = asyncio.Lock()
 
     async def _get_redis(self) -> aioredis.Redis:
+        try:
+            current_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            current_loop = None
+
+        if self._redis is not None and getattr(self, "_loop", None) is not current_loop:
+            try:
+                await self._redis.aclose()
+            except RuntimeError:
+                pass
+            self._redis = None
+
         if self._redis is None:
             self._redis = aioredis.from_url(
                 settings.redis_url,
                 encoding="utf-8",
                 decode_responses=True,
             )
+            self._loop = current_loop
         return self._redis
 
     async def get_access_token(self) -> str:

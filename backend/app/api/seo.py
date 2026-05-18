@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.db.session import get_db
 from app.models.seo_audit import SEOAudit
@@ -65,7 +66,7 @@ async def get_audit(audit_id: str, db: AsyncSession = Depends(get_db)):
     except ValueError:
         raise HTTPException(status_code=422, detail=f"Invalid audit ID: {audit_id}")
 
-    stmt = select(SEOAudit).where(SEOAudit.id == aid)
+    stmt = select(SEOAudit).where(SEOAudit.id == aid).options(selectinload(SEOAudit.listing))
     result = await db.execute(stmt)
     record = result.scalar_one_or_none()
     if record is None:
@@ -82,7 +83,7 @@ async def list_audits(
     db: AsyncSession = Depends(get_db),
 ):
     """List SEO audits, optionally filtered by listing UUID."""
-    stmt = select(SEOAudit)
+    stmt = select(SEOAudit).options(selectinload(SEOAudit.listing))
     if listing_id:
         try:
             lid = UUID(listing_id)

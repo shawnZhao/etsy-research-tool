@@ -1,6 +1,6 @@
 from sqlalchemy import Float, ForeignKey, DateTime, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base, UUIDMixin
 import uuid
 import datetime
@@ -17,3 +17,5 @@ class SEOAudit(Base, UUIDMixin):
     suggestions: Mapped[list] = mapped_column(JSONB, default=list, server_default="[]")
     benchmarks: Mapped[dict] = mapped_column(JSONB, default=dict, server_default="{}")
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    listing = relationship("Listing", foreign_keys=[listing_id], lazy="selectin")

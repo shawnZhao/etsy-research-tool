@@ -9,7 +9,7 @@ from app.etsy.exceptions import (
     EtsyNotFoundError,
 )
 from app.services.keyword_service import KeywordService
-from app.db.session import async_session
+from app.db.session import _get_async_session
 
 RETRYABLE_EXCEPTIONS = (EtsyRateLimitError, EtsyServerError, OSError)
 
@@ -21,7 +21,7 @@ def search_and_analyze_keyword(self, keyword: str):
     async def _run():
         client = EtsyClient()
         try:
-            async with async_session() as db:
+            async with _get_async_session()() as db:
                 service = KeywordService(db)
 
                 # 1. Search Etsy API

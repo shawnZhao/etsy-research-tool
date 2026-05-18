@@ -31,8 +31,8 @@ def _extract_shop_id(url_or_id: str) -> str:
       - 12345 (raw numeric id)             → "12345"
       - anything else                       → stripped raw string
     """
-    # etsy.com/shop/NAME pattern
-    match = re.search(r'etsy\.com/shop/([^/?\s]+)', url_or_id)
+    # etsy.com/shop/NAME or etsy.com/hk-en/shop/NAME pattern
+    match = re.search(r'etsy\.com/(?:[\w-]+/)?shop/([^/?\s]+)', url_or_id)
     if match:
         return match.group(1)
     return url_or_id.strip()
