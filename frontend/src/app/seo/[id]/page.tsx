@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { getSEOAudit } from "../../../lib/api";
 import type { SEOAudit } from "../../../lib/types";
+import { useTranslation } from "../../../lib/i18n/context";
+import { getFieldAnnotation } from "../../../lib/annotations";
+import { InfoBadge } from "../../../components/InfoBadge";
 
 function ScoreCircle({ label, score }: { label: string; score: number }) {
   const color =
@@ -30,8 +33,15 @@ function ScoreCircle({ label, score }: { label: string; score: number }) {
   );
 }
 
+function severityLabel(key: string) {
+  if (key === "high") return "seo.detail.severityHigh";
+  if (key === "medium") return "seo.detail.severityMedium";
+  return "seo.detail.severityLow";
+}
+
 export default function SEOAuditDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { t } = useTranslation();
   const [audit, setAudit] = useState<SEOAudit | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,18 +52,18 @@ export default function SEOAuditDetailPage() {
     setError(null);
     getSEOAudit(id)
       .then(setAudit)
-      .catch((e) => setError("Failed to load audit: " + e.message))
+      .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, [id]);
 
   if (loading)
-    return <div className="text-center py-12 text-gray-500">Loading...</div>;
+    return <div className="text-center py-12 text-gray-500">{t("common.loading")}</div>;
 
   if (error) {
     return (
       <div className="text-center py-12">
         <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 inline-block">
-          {error}
+          {t("seo.detail.errorPrefix") + error}
         </div>
       </div>
     );
@@ -61,7 +71,7 @@ export default function SEOAuditDetailPage() {
 
   if (!audit)
     return (
-      <div className="text-center py-12 text-gray-500">Audit not found.</div>
+      <div className="text-center py-12 text-gray-500">{t("seo.detail.notFound")}</div>
     );
 
   const severityColors: Record<string, string> = {
@@ -77,36 +87,41 @@ export default function SEOAuditDetailPage() {
   };
 
   const typeLabels: Record<string, string> = {
-    title: "Title",
-    tags: "Tags",
-    description: "Description",
+    title: t("seo.detail.scoreTitle"),
+    tags: t("seo.detail.scoreTags"),
+    description: t("seo.detail.scoreDescription"),
   };
+
+  const overallAnnotationKey = getFieldAnnotation("overall_score");
+  const overallTooltip = overallAnnotationKey ? t(overallAnnotationKey) : null;
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-2">SEO Audit Report</h1>
+      <h1 className="text-3xl font-bold mb-2">
+        {audit.listing?.title || t("seo.detail.reportTitle")}
+      </h1>
       <p className="text-gray-500 mb-8">
-        Analyzed: {new Date(audit.created_at).toLocaleString()}
+        {t("seo.detail.analyzed") + new Date(audit.created_at).toLocaleString()}
       </p>
 
       <div className="mb-8">
         <div className="text-5xl font-bold text-orange-600 mb-2">
           {audit.overall_score}
         </div>
-        <span className="text-gray-500">Overall SEO Score</span>
+        <InfoBadge label={t("seo.detail.overallScore")} tooltip={overallTooltip} />
       </div>
 
       <div className="flex gap-8 mb-8">
-        <ScoreCircle label="Title" score={audit.title_score} />
-        <ScoreCircle label="Tags" score={audit.tag_score} />
-        <ScoreCircle label="Description" score={audit.description_score} />
+        <ScoreCircle label={t("seo.detail.scoreTitle")} score={audit.title_score} />
+        <ScoreCircle label={t("seo.detail.scoreTags")} score={audit.tag_score} />
+        <ScoreCircle label={t("seo.detail.scoreDescription")} score={audit.description_score} />
       </div>
 
       <div>
-        <h2 className="text-xl font-semibold mb-4">Improvement Suggestions</h2>
+        <h2 className="text-xl font-semibold mb-4">{t("seo.detail.suggestions")}</h2>
         {audit.suggestions.length === 0 ? (
           <p className="text-gray-500">
-            No suggestions — your listing SEO looks great!
+            {t("seo.detail.noSuggestions")}
           </p>
         ) : (
           <div className="space-y-3">
@@ -119,7 +134,7 @@ export default function SEOAuditDetailPage() {
                   <span
                     className={`text-xs font-bold px-2 py-0.5 rounded ${severityBadgeColors[s.severity]}`}
                   >
-                    {s.severity.toUpperCase()}
+                    {t(severityLabel(s.severity))}
                   </span>
                   <span className="text-sm text-gray-500">
                     {typeLabels[s.type]}

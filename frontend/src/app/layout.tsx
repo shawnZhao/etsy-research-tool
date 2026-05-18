@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Link from "next/link";
+import { TranslationProvider } from "../lib/i18n/context";
+import { Navbar } from "../components/Navbar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,27 +26,13 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-white">
-        <nav className="bg-white border-b border-gray-200 px-6 py-4">
-          <div className="max-w-7xl mx-auto flex items-center gap-8">
-            <Link href="/" className="text-xl font-bold text-orange-600">
-              EtsyResearch
-            </Link>
-            <Link href="/keywords" className="text-gray-600 hover:text-gray-900">
-              Keywords
-            </Link>
-            <Link href="/shops" className="text-gray-600 hover:text-gray-900">
-              Competitors
-            </Link>
-            <Link href="/seo" className="text-gray-600 hover:text-gray-900">
-              SEO Audit
-            </Link>
-          </div>
-        </nav>
-        <main className="max-w-7xl mx-auto px-6 py-8">{children}</main>
+        <TranslationProvider>
+          <Navbar />
+          <main className="max-w-7xl mx-auto px-6 py-8">{children}</main>
+        </TranslationProvider>
       </body>
     </html>
   );
